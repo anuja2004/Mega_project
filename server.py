@@ -6,11 +6,14 @@ from datetime import datetime
 LOG_FILE = "training_log.json"
 
 # --- Function to log metrics ---
-def log_metrics(round_num, avg_loss, avg_acc):
+def log_metrics(round_num, avg_loss, avg_acc, avg_precision, avg_recall, avg_f1):
     entry = {
         "round": round_num,
         "avg_loss": avg_loss,
         "avg_acc": avg_acc,
+        "avg_precision": avg_precision,
+        "avg_recall": avg_recall,
+        "avg_f1": avg_f1,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
@@ -25,39 +28,45 @@ def log_metrics(round_num, avg_loss, avg_acc):
     with open(LOG_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
-    print(f"📊 Logged Round {round_num}: Acc={avg_acc:.4f}, Loss={avg_loss:.4f}")
+    print(f"📊 Logged Round {round_num}: Acc={avg_acc:.4f}, Loss={avg_loss:.4f}, "
+          f"P={avg_precision:.4f}, R={avg_recall:.4f}, F1={avg_f1:.4f}")
 
 
 # --- Aggregation function ---
 def evaluate_metrics_aggregation_fn(results):
-    # Each result = (client_proxy, metrics)
-    accs = [r[1]["test_accuracy"] for r in results if "test_accuracy" in r[1]]
-    losses = [r[1]["test_loss"] for r in results if "test_loss" in r[1]]
-
-    if not accs or not losses:
-        print("⚠️ No metrics received from clients.")
-        return {}
+    accs = [r[1].get("test_accuracy") for r in results if "test_accuracy" in r[1]]
+    losses = [r[1].get("test_loss") for r in results if "test_loss" in r[1]]
+    precisions = [r[1].get("precision") for r in results if "precision" in r[1]]
+    recalls = [r[1].get("recall") for r in results if "recall" in r[1]]
+    f1s = [r[1].get("f1_score") for r in results if "f1_score" in r[1]]
 
     avg_acc = sum(accs) / len(accs)
     avg_loss = sum(losses) / len(losses)
+    avg_precision = sum(precisions) / len(precisions)
+    avg_recall = sum(recalls) / len(recalls)
+    avg_f1 = sum(f1s) / len(f1s)
 
-    # --- Safe handling for training_log.json ---
     try:
         with open(LOG_FILE, "r") as f:
             data = json.load(f)
         round_num = len(data) + 1
-    except FileNotFoundError:
-        data = []
-        round_num = 1
-    except json.JSONDecodeError:
-        data = []
+    except:
         round_num = 1
 
-    # Log metrics for Streamlit
-    log_metrics(round_num, avg_loss, avg_acc)
+    log_metrics(round_num, avg_loss, avg_acc, avg_precision, avg_recall, avg_f1)
 
-    print(f"📈 Global Round {round_num} — avg_loss: {avg_loss:.4f}, avg_acc: {avg_acc:.4f}")
-    return {"avg_loss": avg_loss, "avg_acc": avg_acc}
+    print(
+        f"📈 Global Round {round_num} — Loss: {avg_loss:.4f}, Acc: {avg_acc:.4f}, "
+        f"Precision: {avg_precision:.4f}, Recall: {avg_recall:.4f}, F1: {avg_f1:.4f}"
+    )
+
+    return {
+        "avg_loss": avg_loss,
+        "avg_acc": avg_acc,
+        "avg_precision": avg_precision,
+        "avg_recall": avg_recall,
+        "avg_f1": avg_f1,
+    }
 
 
 

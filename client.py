@@ -9,6 +9,8 @@ import flwr as fl
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
 from model import FraudModel
+from sklearn.metrics import precision_score, recall_score, f1_score, classification_report
+
 
 
 # ------------------------- Data Loading -------------------------
@@ -85,18 +87,40 @@ def train(model, loader, device):
 def test(model, loader, device):
     model.eval()
     criterion = nn.CrossEntropyLoss()
+
     total_loss, correct = 0.0, 0
+    all_preds = []
+    all_targets = []
+
     with torch.no_grad():
         for data, target in loader:
             data, target = data.to(device), target.to(device)
+
             output = model(data)
             loss = criterion(output, target)
+
             total_loss += loss.item() * data.size(0)
+
             _, predicted = torch.max(output.data, 1)
             correct += (predicted == target).sum().item()
+
+            all_preds.extend(predicted.cpu().numpy())
+            all_targets.extend(target.cpu().numpy())
+
     avg_loss = total_loss / len(loader.dataset)
     acc = correct / len(loader.dataset)
-    return avg_loss, acc
+
+    # 🔥 Compute classification metrics
+    precision = precision_score(all_targets, all_preds, zero_division=0)
+    recall = recall_score(all_targets, all_preds, zero_division=0)
+    f1 = f1_score(all_targets, all_preds, zero_division=0)
+
+    # 🔥 Print classification report
+    print("\n📌 Classification Report:")
+    print(classification_report(all_targets, all_preds))
+
+    return avg_loss, acc, precision, recall, f1
+
 
 
 # ------------------------- Flower Client -------------------------
@@ -126,12 +150,21 @@ class FlowerClient(fl.client.NumPyClient):
 
     def evaluate(self, parameters, config):
         self.set_parameters(parameters)
-        test_loss, test_acc = test(self.model, self.test_loader, self.device)
-        print(f"🧪 Client evaluation — loss: {test_loss:.4f}, acc: {test_acc:.4f}")
+        test_loss, test_acc, precision, recall, f1 = test(self.model, self.test_loader, self.device)
+
+        print(
+            f"🧪 Client evaluation — loss: {test_loss:.4f}, acc: {test_acc:.4f}, "
+            f"precision: {precision:.4f}, recall: {recall:.4f}, f1: {f1:.4f}"
+        )
+
         return float(test_loss), len(self.test_loader.dataset), {
             "test_loss": test_loss,
             "test_accuracy": test_acc,
+            "precision": precision,
+            "recall": recall,
+            "f1_score": f1,
         }
+
 
 
 # ------------------------- Main -------------------------
