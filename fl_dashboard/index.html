@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Federated Learning Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>🏦 Federated Learning Dashboard</h1>
+  <p>Monitor your federated training in real-time.</p>
+
+  <button id="startBtn">🚀 Start Training Visualization</button>
+
+  <section id="summary">
+    <h2>📊 Training Summary</h2>
+    <div id="roundSummary">Waiting for results...</div>
+  </section>
+
+  <section id="chartSection">
+    <canvas id="accuracyChart"></canvas>
+    <canvas id="lossChart"></canvas>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>
