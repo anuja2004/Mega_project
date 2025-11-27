@@ -44,11 +44,11 @@ model = Sequential([
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 # ------------------ Train model ------------------
-print("\n🚀 Starting ANN Training...\n")
+print("\n Starting ANN Training...\n")
 history = model.fit(X_train, y_train, epochs=20, batch_size=32, verbose=1, validation_split=0.2)
 
 # ------------------ Evaluate ------------------
-print("\n✅ Training Complete!\n")
+print("\n Training Complete!\n")
 loss, acc = model.evaluate(X_test, y_test)
 print(f"🔹 Test Accuracy: {acc * 100:.2f}%")
 print(f"🔹 Test Loss: {loss:.4f}")
@@ -58,6 +58,7 @@ y_pred = (model.predict(X_test) > 0.5).astype(int)
 
 # ------------------ Classification Report ------------------
 report = classification_report(y_test, y_pred)
+print("\nTraditional model\n")
 print("\n📊 Classification Report:\n")
 print(report)
 
